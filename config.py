@@ -6,8 +6,7 @@ ENV = os.getenv("APP_ENV", "development")  # Default to 'development' if not set
 
 # Path to config files
 CONFIG_PATHS = {
-    "development": "config/dev_config.yaml",
-    "production": "config/prod_config.yaml"
+    "development": "config.yaml",
 }
 
 # Load configuration
