@@ -1,1 +1,4 @@
 requests
+pyyaml
+sqlalchemy
+PyQt5
