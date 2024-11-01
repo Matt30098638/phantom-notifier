@@ -1,15 +1,58 @@
-# config.py
-JELLYFIN_API_KEY = 'd166807607164db9b8f08d368da22efb'
-TMDB_API_KEY = '84147d5f9aa77e54c45cd5b6ceabd0fc'
-EMAIL_HOST = 'smtp.office365.com'
-EMAIL_PORT = 587
-EMAIL_USER = 'requests@palmertech.co.uk'
-EMAIL_PASS = '22BigTurkeyDumps!'
-RECIPIENT_GROUPS = {
-    'all_ages': ['all_ages@palmertech.co.uk'],
-    'teen': ['teen_group@palmertech.co.uk'],
-    'adult': ['adult_group@palmertech.co.uk']
+import os
+import yaml
+
+# Load environment configuration
+ENV = os.getenv("APP_ENV", "development")  # Default to 'development' if not set
+
+# Path to config files
+CONFIG_PATHS = {
+    "development": "config/dev_config.yaml",
+    "production": "config/prod_config.yaml"
 }
-JELLYFIN_URL = 'http://10.252.0.10:8096'
-USER_ID = 'matt.admin'
-TMDB_URL = 'https://api.themoviedb.org/3'
+
+# Load configuration
+def load_config():
+    """Load configuration based on environment."""
+    config_path = CONFIG_PATHS.get(ENV)
+    if not config_path or not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file for {ENV} environment not found.")
+    
+    with open(config_path, 'r') as config_file:
+        return yaml.safe_load(config_file)
+
+config = load_config()
+
+
+# Validation of Required Configurations
+def validate_config_section(section_name, required_keys):
+    """Ensure that the specified section in config contains all required keys."""
+    section = config.get(section_name, {})
+    missing_keys = [key for key in required_keys if key not in section]
+    if missing_keys:
+        raise ValueError(f"Missing required configuration keys in '{section_name}': {', '.join(missing_keys)}")
+    return section
+
+
+# Config Retrieval Functions
+def get_jellyfin_config():
+    """Retrieve and validate Jellyfin configuration."""
+    return validate_config_section("jellyfin", ["url", "api_key"])
+
+
+def get_tmdb_config():
+    """Retrieve and validate TMDB configuration."""
+    return validate_config_section("tmdb", ["api_key"])
+
+
+def get_email_config():
+    """Retrieve and validate email configuration."""
+    return validate_config_section("email", ["smtp_server", "smtp_port", "sender", "password"])
+
+
+# Usage Examples (Functions to fetch configurations with validations)
+jellyfin_config = get_jellyfin_config()
+tmdb_config = get_tmdb_config()
+email_config = get_email_config()
+
+# Optionally, log the environment for clarity
+print(f"Loaded configuration for {ENV} environment.")
