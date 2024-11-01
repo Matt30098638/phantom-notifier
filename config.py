@@ -1,57 +1,38 @@
 import os
 import yaml
+import logging
 
-# Load environment configuration
-ENV = os.getenv("APP_ENV", "development")  # Default to 'development' if not set
-
-# Path to config files
+# Environment setup and logging
+ENV = os.getenv("APP_ENV", "development")
 CONFIG_PATHS = {
-    "development": "config.yaml",
+    "development": "config/dev_config.yaml",
+    "production": "config/prod_config.yaml"
 }
 
-# Load configuration
 def load_config():
-    """Load configuration based on environment."""
+    """Load configuration based on the environment."""
     config_path = CONFIG_PATHS.get(ENV)
     if not config_path or not os.path.exists(config_path):
         raise FileNotFoundError(f"Configuration file for {ENV} environment not found.")
-    
-    with open(config_path, 'r') as config_file:
-        return yaml.safe_load(config_file)
 
-config = load_config()
+    with open(config_path, 'r') as file:
+        return yaml.safe_load(file)
 
+# Global config variable
+config_data = load_config()
 
-# Validation of Required Configurations
-def validate_config_section(section_name, required_keys):
-    """Ensure that the specified section in config contains all required keys."""
-    section = config.get(section_name, {})
-    missing_keys = [key for key in required_keys if key not in section]
-    if missing_keys:
-        raise ValueError(f"Missing required configuration keys in '{section_name}': {', '.join(missing_keys)}")
-    return section
+def get_section(section):
+    """Retrieve a section of the configuration."""
+    if section not in config_data:
+        logging.error(f"Missing '{section}' section in configuration.")
+    return config_data.get(section, {})
 
-
-# Config Retrieval Functions
+# Convenience functions to retrieve specific configs
 def get_jellyfin_config():
-    """Retrieve and validate Jellyfin configuration."""
-    return validate_config_section("jellyfin", ["url", "api_key"])
-
+    return get_section("jellyfin")
 
 def get_tmdb_config():
-    """Retrieve and validate TMDB configuration."""
-    return validate_config_section("tmdb", ["api_key"])
-
+    return get_section("tmdb")
 
 def get_email_config():
-    """Retrieve and validate email configuration."""
-    return validate_config_section("email", ["smtp_server", "smtp_port", "sender", "password"])
-
-
-# Usage Examples (Functions to fetch configurations with validations)
-jellyfin_config = get_jellyfin_config()
-tmdb_config = get_tmdb_config()
-email_config = get_email_config()
-
-# Optionally, log the environment for clarity
-print(f"Loaded configuration for {ENV} environment.")
+    return get_section("email")
