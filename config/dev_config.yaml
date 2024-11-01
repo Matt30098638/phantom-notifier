@@ -1,0 +1,23 @@
+# config/dev_config.yaml
+
+jellyfin:
+  api_key: '975d0c161d0441e38ea5b33ba31971b7'
+  url: 'http://10.252.0.10:8096'
+  user_id: 'matt.admin'
+
+tmdb:
+  api_key: '84147d5f9aa77e54c45cd5b6ceabd0fc'
+  url: 'https://api.themoviedb.org/3'
+
+email:
+  smtp_server: 'smtp.office365.com'
+  smtp_port: 587
+  sender: 'requests@palmertech.co.uk'
+  password: '22BigTurkeyDumps!'
+  recipient_groups:
+    all_ages:
+      - 'all_ages@palmertech.co.uk'
+    teen:
+      - 'teen_group@palmertech.co.uk'
+    adult:
+      - 'adult_group@palmertech.co.uk'
