@@ -1,1 +1,23 @@
+# config/prod_config.yaml
 
+jellyfin:
+  api_key: ''
+  url: 'http://127.0..1:8096'
+  user_id: 'user.admin'
+
+tmdb:
+  api_key: ''
+  url: 'https://api.themoviedb.org/3'
+
+email:
+  smtp_server: ''
+  smtp_port: 587
+  sender: 'Sender@domain.com'
+  password: ''
+  recipient_groups:
+    all_ages:
+      - 'all_ages@domain.co.uk'
+    teen:
+      - 'teen_group@domain.co.uk'
+    adult:
+      - 'adult_group@domain.co.uk'
