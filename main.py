@@ -1,38 +1,70 @@
-# main.py
-from fetch_data import fetch_jellyfin_library, get_new_releases_from_tmdb
-from cross_compare import cross_compare_library
-from utils import classify_by_age
-from email_notifications import compose_email_content, send_email
-from database import initialize_db, store_notified_release
-from config import RECIPIENT_GROUPS
 import time
-import schedule
+import logging
+from database import add_media_item, add_recommendation, cache_recommendation_exists
+from fetch_data import get_jellyfin_data, get_tmdb_recommendations
+from email_notifications import send_summary_notification
+from utils import log_error, retry
+
+logging.basicConfig(level=logging.INFO)
 
 
-def main():
-    # Initialize database
-    initialize_db()
+def fetch_jellyfin_media():
+    """Fetch media items from Jellyfin and store them in the database."""
+    try:
+        media_items = get_jellyfin_data()
+        for item in media_items:
+            if not item_in_database(item['title'], item['jellyfin_id']):
+                add_media_item(title=item['title'], media_type=item['type'], jellyfin_id=item['jellyfin_id'])
+        logging.info("Jellyfin media fetch complete.")
+    except Exception as e:
+        log_error(f"Error fetching Jellyfin media: {e}")
 
-    library = fetch_jellyfin_library()
-    new_releases = get_new_releases_from_tmdb()
-    
-    relevant_releases = cross_compare_library(new_releases, library)
-    
-    categorized_releases = classify_by_age(relevant_releases)
-    
-    for age_group, releases in categorized_releases.items():
-        if releases:
-            email_content = compose_email_content(releases, age_group)
-            send_email(email_content, RECIPIENT_GROUPS[age_group])
 
-            # Store notified releases
-            for release in releases:
-                store_notified_release(release['title'], release['release_date'], release.get('age_rating'))
+def fetch_tmdb_recommendations():
+    """Fetch recommendations from TMDB for Jellyfin media items."""
+    try:
+        media_items = get_all_media_items()
+        for media in media_items:
+            if not cache_recommendation_exists(media.id):
+                recommendations = get_tmdb_recommendations(media.title, media.media_type)
+                for recommendation in recommendations:
+                    add_recommendation(
+                        media_item_id=media.id,
+                        recommended_title=recommendation['title'],
+                        recommended_type=recommendation['type'],
+                        tmdb_id=recommendation['tmdb_id']
+                    )
+        logging.info("TMDB recommendation fetch complete.")
+    except Exception as e:
+        log_error(f"Error fetching TMDB recommendations: {e}")
 
-# Set up the schedule
-schedule.every().hour.do(main)  # Run main every hour
+
+def update_database():
+    """Update the database with new media and recommendations."""
+    fetch_jellyfin_media()
+    fetch_tmdb_recommendations()
+    logging.info("Database update complete.")
+
+
+def send_notifications():
+    """Send notification email with a summary of new recommendations."""
+    try:
+        recommendations = get_new_recommendations()
+        if recommendations:
+            send_summary_notification(recommendations)
+    except Exception as e:
+        log_error(f"Error sending notifications: {e}")
+
+
+def schedule_tasks():
+    """Scheduler to periodically fetch data, update the database, and send notifications."""
+    while True:
+        update_database()
+        send_notifications()
+        logging.info("Scheduled tasks completed. Sleeping for 24 hours.")
+        time.sleep(86400)  # Schedule to run once every 24 hours
+
 
 if __name__ == "__main__":
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    logging.info("Starting PhantomFetch.")
+    schedule_tasks()
