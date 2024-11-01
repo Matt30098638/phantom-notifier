@@ -3,7 +3,7 @@ import time
 from functools import wraps
 import re
 import smtplib
-from config import config
+
 
 # Setup logging with levels
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
